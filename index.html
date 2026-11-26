@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telco Customer Churn Intelligence | ML & EDA Web App</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js for Interactive Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            slateDark: '#0b1120',
+            slateCard: '#111827',
+            slateBorder: '#1f2937',
+            tealAccent: '#14b8a6',
+            coralAccent: '#f43f5e',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-teal-500 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+          <svg class="w-5 h-5 text-slate-950" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-tight text-white">TelcoChurn<span class="text-teal-400">.AI</span></span>
+          <span class="hidden sm:inline-block ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">Logistic Regression Engine</span>
+        </div>
+      </div>
+
+      <!-- Responsive Navigation Links -->
+      <nav class="flex items-center space-x-1 sm:space-x-2">
+        <button onclick="switchSection('simulator')" id="nav-simulator" class="nav-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-medium bg-teal-500/15 text-teal-300 border border-teal-500/30 transition">
+          Risk Simulator
+        </button>
+        <button onclick="switchSection('eda')" id="nav-eda" class="nav-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition">
+          EDA & Odds Ratios
+        </button>
+        <button onclick="switchSection('threshold')" id="nav-threshold" class="nav-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/70 transition">
+          Threshold Tuning
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section & Executive KPI Cards -->
+  <section class="relative overflow-hidden border-b border-slate-800/80 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+        <div class="max-w-3xl">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs font-medium mb-3">
+            <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+            <span>IBM Telco Dataset • 7,043 Observations • 31 Engineered & Raw Features</span>
+          </div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+            Telco Customer Churn Intelligence
+          </h1>
+          <p class="mt-2 text-slate-400 text-sm sm:text-base leading-relaxed">
+            End-to-End Exploratory Data Analysis, Domain Feature Engineering, and Class-Balanced Logistic Regression Risk Engine with Odds-Ratio Interpretability &amp; Decision Threshold Optimization.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <button onclick="applyPreset('high')" class="px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-semibold transition">
+            Load High-Risk Profile
+          </button>
+          <button onclick="applyPreset('loyal')" class="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition">
+            Load Loyal Profile
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Executive KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Customers</span>
+            <span class="p-2 rounded-lg bg-sky-500/10 text-sky-400 text-xs font-bold">100%</span>
+          </div>
+          <div class="mt-3 text-3xl font-extrabold text-white">7,043</div>
+          <p class="mt-1 text-xs text-slate-400">5,634 Train • 1,409 Stratified Test</p>
+        </div>
+
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Baseline Churn Rate</span>
+            <span class="p-2 rounded-lg bg-rose-500/10 text-rose-400 text-xs font-bold">1,869 Left</span>
+          </div>
+          <div class="mt-3 text-3xl font-extrabold text-rose-400">26.5%</div>
+          <p class="mt-1 text-xs text-slate-400">5,174 Retained (73.5%) • Class Imbalanced</p>
+        </div>
+
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Model ROC-AUC</span>
+            <span class="p-2 rounded-lg bg-teal-500/10 text-teal-400 text-xs font-bold">L2 Balanced</span>
+          </div>
+          <div class="mt-3 text-3xl font-extrabold text-teal-400">0.846</div>
+          <p class="mt-1 text-xs text-slate-400">Strong ranking discrimination across cohorts</p>
+        </div>
+
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Tuned F1-Score</span>
+            <span class="p-2 rounded-lg bg-amber-500/10 text-amber-400 text-xs font-bold">Cutoff 0.59</span>
+          </div>
+          <div class="mt-3 text-3xl font-extrabold text-amber-400">0.629</div>
+          <p class="mt-1 text-xs text-slate-400">71.4% Churn Recall • 77.6% Overall Accuracy</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 1: INTERACTIVE LIVE CHURN RISK SIMULATOR                      -->
+    <!-- ===================================================================== -->
+    <section id="section-simulator" class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-bold text-white">Live Customer Churn Risk Simulator</h2>
+          <p class="text-sm text-slate-400">Adjust customer contract, tenure, billing, and service add-ons to compute real-time Logistic Regression log-odds &amp; retention actions.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left Input Controls (7 cols) -->
+        <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6 shadow-xl">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <!-- Contract Type -->
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Contract Type</label>
+              <select id="sim-contract" onchange="updateSimulator()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-400">
+                <option value="Month-to-month" selected>Month-to-month (42.7% avg churn)</option>
+                <option value="One year">One year (11.3% avg churn)</option>
+                <option value="Two year">Two year (2.8% avg churn)</option>
+              </select>
+            </div>
+
+            <!-- Internet Service -->
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Internet Service</label>
+              <select id="sim-internet" onchange="updateSimulator()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-400">
+                <option value="Fiber optic" selected>Fiber optic (OR: 3.37x Risk)</option>
+                <option value="DSL">DSL Broadband</option>
+                <option value="No">No Internet Service</option>
+              </select>
+            </div>
+
+            <!-- Tenure Slider -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4">
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Customer Tenure</label>
+                <span id="val-tenure" class="text-sm font-bold text-teal-400">6 months</span>
+              </div>
+              <input id="sim-tenure" type="range" min="0" max="72" value="6" oninput="updateSimulator()" class="w-full accent-teal-400 cursor-pointer" />
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                <span>0 mo (New)</span>
+                <span>36 mo</span>
+                <span>72 mo (6 yr)</span>
+              </div>
+            </div>
+
+            <!-- Monthly Charges Slider -->
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4">
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Monthly Charges</label>
+                <span id="val-monthly" class="text-sm font-bold text-teal-400">$89.00</span>
+              </div>
+              <input id="sim-monthly" type="range" min="18" max="120" step="0.5" value="89" oninput="updateSimulator()" class="w-full accent-teal-400 cursor-pointer" />
+              <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                <span>$18/mo</span>
+                <span>$70/mo</span>
+                <span>$120/mo</span>
+              </div>
+            </div>
+
+            <!-- Payment Method -->
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Payment Method</label>
+              <select id="sim-payment" onchange="updateSimulator()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-400">
+                <option value="Electronic check" selected>Electronic check (45.3% avg churn)</option>
+                <option value="Mailed check">Mailed check (19.1% avg churn)</option>
+                <option value="Bank transfer (automatic)">Bank transfer (automatic)</option>
+                <option value="Credit card (automatic)">Credit card (automatic)</option>
+              </select>
+            </div>
+
+            <!-- Streaming Services -->
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Streaming Add-Ons</label>
+              <select id="sim-streaming" onchange="updateSimulator()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-teal-400">
+                <option value="Both" selected>Both TV &amp; Movies</option>
+                <option value="One">TV or Movies Only</option>
+                <option value="None">No Streaming</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Toggle Switches for Security, Tech Support, Paperless, Senior -->
+          <div class="pt-2 border-t border-slate-800">
+            <span class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Protection &amp; Account Flags</span>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <label class="flex items-center space-x-2.5 bg-slate-950 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700">
+                <input id="sim-security" type="checkbox" onchange="updateSimulator()" class="w-4 h-4 rounded accent-teal-400" />
+                <span class="text-xs font-medium text-slate-200">Online Security</span>
+              </label>
+              <label class="flex items-center space-x-2.5 bg-slate-950 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700">
+                <input id="sim-tech" type="checkbox" onchange="updateSimulator()" class="w-4 h-4 rounded accent-teal-400" />
+                <span class="text-xs font-medium text-slate-200">Tech Support</span>
+              </label>
+              <label class="flex items-center space-x-2.5 bg-slate-950 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700">
+                <input id="sim-paperless" type="checkbox" checked onchange="updateSimulator()" class="w-4 h-4 rounded accent-teal-400" />
+                <span class="text-xs font-medium text-slate-200">Paperless Bill</span>
+              </label>
+              <label class="flex items-center space-x-2.5 bg-slate-950 border border-slate-800 rounded-xl p-3 cursor-pointer hover:border-slate-700">
+                <input id="sim-senior" type="checkbox" onchange="updateSimulator()" class="w-4 h-4 rounded accent-teal-400" />
+                <span class="text-xs font-medium text-slate-200">Senior Citizen</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Real-Time Engineered Features Pill Strip -->
+          <div class="bg-slate-950 border border-slate-800/90 rounded-xl p-4">
+            <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">Live Engineered Features (Task 2 Pipeline)</div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+              <div class="bg-slate-900 rounded-lg p-2.5 border border-slate-800">
+                <div class="text-[11px] text-slate-400">NEW_Engaged</div>
+                <div id="fe-engaged" class="text-sm font-bold text-white mt-0.5">0 (No)</div>
+              </div>
+              <div class="bg-slate-900 rounded-lg p-2.5 border border-slate-800">
+                <div class="text-[11px] text-slate-400">NEW_TENURE_YEAR</div>
+                <div id="fe-tenure-yr" class="text-sm font-bold text-teal-400 mt-0.5">0-1 Year</div>
+              </div>
+              <div class="bg-slate-900 rounded-lg p-2.5 border border-slate-800">
+                <div class="text-[11px] text-slate-400">NEW_TotalServices</div>
+                <div id="fe-services" class="text-sm font-bold text-white mt-0.5">4 Services</div>
+              </div>
+              <div class="bg-slate-900 rounded-lg p-2.5 border border-slate-800">
+                <div class="text-[11px] text-slate-400">NEW_AVG_Charges</div>
+                <div id="fe-avg-charges" class="text-sm font-bold text-white mt-0.5">$76.29</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Prediction Output & Gauge (5 cols) -->
+        <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between shadow-xl">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Predicted Churn Probability</span>
+              <span id="risk-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                HIGH CHURN RISK
+              </span>
+            </div>
+
+            <!-- Semicircular SVG Gauge -->
+            <div class="relative flex flex-col items-center justify-center my-4">
+              <svg viewBox="0 0 260 150" class="w-full max-w-[280px] overflow-visible">
+                <!-- Background Arc -->
+                <path d="M 20 130 A 110 110 0 0 1 240 130" fill="none" stroke="#1e293b" stroke-width="20" stroke-linecap="round" />
+                <!-- Active Probability Arc -->
+                <path id="gauge-arc" d="M 20 130 A 110 110 0 0 1 240 130" fill="none" stroke="#f43f5e" stroke-width="20" stroke-linecap="round"
+                      stroke-dasharray="345.57" stroke-dashoffset="65" class="transition-all duration-500 ease-out" />
+                <!-- 59% Decision Threshold Tick Marker -->
+                <line id="threshold-tick" x1="161" y1="15" x2="155" y2="34" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" />
+                <text x="166" y="14" fill="#fbbf24" font-size="10" font-weight="700">Cutoff 59%</text>
+                <!-- Center Percentage Text -->
+                <text id="gauge-percent" x="130" y="105" text-anchor="middle" fill="#ffffff" font-size="36" font-weight="800">81.4%</text>
+                <text id="gauge-sub" x="130" y="128" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="500">Decision Cutoff: 59.0%</text>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Actionable Retention Recommendations -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2.5">
+            <div class="flex items-center space-x-2">
+              <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Recommended Retention Strategy</h3>
+            </div>
+            <ul id="retention-list" class="space-y-2 text-xs text-slate-300 leading-relaxed">
+              <!-- Populated dynamically via JS -->
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 2: EDA & STATISTICAL INSIGHTS DASHBOARD                       -->
+    <!-- ===================================================================== -->
+    <section id="section-eda" class="space-y-6 pt-4 border-t border-slate-800/80">
+      <div>
+        <h2 class="text-xl sm:text-2xl font-bold text-white">Exploratory Data Analysis &amp; Odds-Ratio Insights</h2>
+        <p class="text-sm text-slate-400">Key behavioral patterns uncovered across 7,043 customer records and learned Logistic Regression feature coefficients ($e^{\beta}$).</p>
+      </div>
+
+      <!-- 2x2 Interactive Chart Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Chart 1: Churn Rate by Contract Type -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <h3 class="text-sm font-bold text-white mb-1">Churn Rate by Contract Type (%)</h3>
+          <p class="text-xs text-slate-400 mb-4">Month-to-month subscribers churn at 15x the rate of two-year contract customers.</p>
+          <div class="h-64">
+            <canvas id="chartContract"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Top Churn Drivers vs. Retention Protectors (Odds Ratios) -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <h3 class="text-sm font-bold text-white mb-1">Logistic Regression Odds Ratios ($e^{\beta}$)</h3>
+          <p class="text-xs text-slate-400 mb-4">Values &gt; 1.0 increase churn risk (coral); values &lt; 1.0 protect retention (teal).</p>
+          <div class="h-64">
+            <canvas id="chartOdds"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 3: Churn Rate by Internet Service -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <h3 class="text-sm font-bold text-white mb-1">Churn Rate by Internet Service (%)</h3>
+          <p class="text-xs text-slate-400 mb-4">Fiber optic users experience a 41.9% churn rate vs. 19.0% for DSL.</p>
+          <div class="h-64">
+            <canvas id="chartInternet"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 4: Churn Rate by Payment Method -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+          <h3 class="text-sm font-bold text-white mb-1">Churn Rate by Payment Method (%)</h3>
+          <p class="text-xs text-slate-400 mb-4">Manual electronic checks show 45.3% churn compared to ~16% for auto-pay.</p>
+          <div class="h-64">
+            <canvas id="chartPayment"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Descriptive Statistics Summary Table (Mean, Median, Mode) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
+        <div class="px-6 py-4 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm font-bold text-white">Descriptive Statistics Summary (Mean, Median, Mode &amp; Dispersion)</h3>
+            <p class="text-xs text-slate-400">Computed after imputing 11 missing <code class="text-teal-300">TotalCharges</code> records with the median ($1,397.48).</p>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">n = 7,043 Customers</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-950/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                <th class="py-3.5 px-6">Numerical Feature</th>
+                <th class="py-3.5 px-4">Mean</th>
+                <th class="py-3.5 px-4">Median (50%)</th>
+                <th class="py-3.5 px-4">Mode</th>
+                <th class="py-3.5 px-4">Std Dev</th>
+                <th class="py-3.5 px-4">Min</th>
+                <th class="py-3.5 px-6">Max</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-sm">
+              <tr class="hover:bg-slate-800/40">
+                <td class="py-3.5 px-6 font-semibold text-white">tenure (months)</td>
+                <td class="py-3.5 px-4 text-teal-300 font-medium">32.371</td>
+                <td class="py-3.5 px-4 text-slate-200">29.000</td>
+                <td class="py-3.5 px-4 text-amber-300">1.000</td>
+                <td class="py-3.5 px-4 text-slate-400">24.559</td>
+                <td class="py-3.5 px-4 text-slate-400">0.000</td>
+                <td class="py-3.5 px-6 text-slate-400">72.000</td>
+              </tr>
+              <tr class="hover:bg-slate-800/40">
+                <td class="py-3.5 px-6 font-semibold text-white">MonthlyCharges ($)</td>
+                <td class="py-3.5 px-4 text-teal-300 font-medium">$64.762</td>
+                <td class="py-3.5 px-4 text-slate-200">$70.350</td>
+                <td class="py-3.5 px-4 text-amber-300">$20.050</td>
+                <td class="py-3.5 px-4 text-slate-400">$30.090</td>
+                <td class="py-3.5 px-4 text-slate-400">$18.250</td>
+                <td class="py-3.5 px-6 text-slate-400">$118.750</td>
+              </tr>
+              <tr class="hover:bg-slate-800/40">
+                <td class="py-3.5 px-6 font-semibold text-white">TotalCharges ($)</td>
+                <td class="py-3.5 px-4 text-teal-300 font-medium">$2,281.917</td>
+                <td class="py-3.5 px-4 text-slate-200">$1,397.475</td>
+                <td class="py-3.5 px-4 text-amber-300">$20.200</td>
+                <td class="py-3.5 px-4 text-slate-400">$2,265.270</td>
+                <td class="py-3.5 px-4 text-slate-400">$18.800</td>
+                <td class="py-3.5 px-6 text-slate-400">$8,684.800</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 3: MODEL PERFORMANCE & DECISION THRESHOLD EXPLORER            -->
+    <!-- ===================================================================== -->
+    <section id="section-threshold" class="space-y-6 pt-4 border-t border-slate-800/80">
+      <div>
+        <h2 class="text-xl sm:text-2xl font-bold text-white">Model Performance &amp; Decision Threshold Explorer</h2>
+        <p class="text-sm text-slate-400">Explore how adjusting the classification probability cutoff trades off Precision against Recall on the 1,409-customer test set.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Interactive Threshold Slider Card (5 cols) -->
+        <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5 shadow-lg">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Decision Cutoff Threshold</span>
+            <span id="thresh-display" class="px-3 py-1 rounded-lg bg-teal-500/20 text-teal-300 font-extrabold text-base border border-teal-500/30">0.59</span>
+          </div>
+
+          <input id="thresh-slider" type="range" min="0.20" max="0.80" step="0.01" value="0.59" oninput="updateThresholdExplorer()" class="w-full accent-teal-400 cursor-pointer" />
+          <div class="flex justify-between text-xs text-slate-500">
+            <span>0.20 (High Recall)</span>
+            <span>0.50 (Default)</span>
+            <span>0.80 (High Precision)</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5">
+              <div class="text-xs text-slate-400">Accuracy</div>
+              <div id="m-acc" class="text-2xl font-extrabold text-white mt-1">77.6%</div>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5">
+              <div class="text-xs text-slate-400">F1-Score (Target)</div>
+              <div id="m-f1" class="text-2xl font-extrabold text-teal-400 mt-1">0.629</div>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5">
+              <div class="text-xs text-slate-400">Recall (Churn Caught)</div>
+              <div id="m-rec" class="text-2xl font-extrabold text-amber-400 mt-1">71.4%</div>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5">
+              <div class="text-xs text-slate-400">Precision</div>
+              <div id="m-prec" class="text-2xl font-extrabold text-sky-400 mt-1">56.2%</div>
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-400 leading-relaxed">
+            At the optimal <strong class="text-amber-300">0.59 threshold</strong>, the Balanced Logistic Regression model catches <strong class="text-white">267 of 374</strong> actual churners while maximizing F1-Score (<strong class="text-teal-300">0.629</strong>).
+          </p>
+        </div>
+
+        <!-- Model Variants Benchmark Table (7 cols) -->
+        <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between">
+          <div>
+            <div class="px-6 py-4 border-b border-slate-800">
+              <h3 class="text-sm font-bold text-white">Logistic Regression Experiment Comparison (Test Set: 1,409 Customers)</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Comparing standard un-weighted baseline vs. inverse-frequency class balancing and F1 threshold optimization.</p>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-950/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                    <th class="py-3.5 px-5">Model Variant</th>
+                    <th class="py-3.5 px-3">Cutoff</th>
+                    <th class="py-3.5 px-3">Accuracy</th>
+                    <th class="py-3.5 px-3">Precision</th>
+                    <th class="py-3.5 px-3">Recall</th>
+                    <th class="py-3.5 px-3">F1-Score</th>
+                    <th class="py-3.5 px-5">ROC-AUC</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800 text-sm">
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="py-4 px-5 font-medium text-slate-200">Logistic Regression (Default)</td>
+                    <td class="py-4 px-3 text-slate-400">0.50</td>
+                    <td class="py-4 px-3 text-white font-semibold">80.8%</td>
+                    <td class="py-4 px-3 text-slate-300">67.0%</td>
+                    <td class="py-4 px-3 text-rose-400">54.3%</td>
+                    <td class="py-4 px-3 text-slate-300">0.600</td>
+                    <td class="py-4 px-5 text-teal-300 font-semibold">0.847</td>
+                  </tr>
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="py-4 px-5 font-medium text-slate-200">Logistic Regression (Balanced)</td>
+                    <td class="py-4 px-3 text-slate-400">0.50</td>
+                    <td class="py-4 px-3 text-slate-300">74.0%</td>
+                    <td class="py-4 px-3 text-slate-300">50.6%</td>
+                    <td class="py-4 px-3 text-amber-300 font-semibold">78.9%</td>
+                    <td class="py-4 px-3 text-slate-200">0.617</td>
+                    <td class="py-4 px-5 text-teal-300 font-semibold">0.846</td>
+                  </tr>
+                  <tr class="bg-teal-500/10 hover:bg-teal-500/15">
+                    <td class="py-4 px-5 font-bold text-teal-300">Balanced + Threshold Tuned ★</td>
+                    <td class="py-4 px-3 text-amber-300 font-bold">0.59</td>
+                    <td class="py-4 px-3 text-white font-bold">77.6%</td>
+                    <td class="py-4 px-3 text-slate-200 font-semibold">56.2%</td>
+                    <td class="py-4 px-3 text-amber-300 font-bold">71.4%</td>
+                    <td class="py-4 px-3 text-teal-300 font-extrabold">0.629</td>
+                    <td class="py-4 px-5 text-teal-300 font-bold">0.846</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="px-6 py-4 bg-slate-950/60 border-t border-slate-800 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2">
+            <span>Confusion Matrix at 0.59: <strong class="text-white">827 TN</strong> • <strong class="text-rose-400">208 FP</strong> • <strong class="text-amber-300">107 FN</strong> • <strong class="text-teal-300">267 TP</strong></span>
+            <span class="text-teal-400 font-medium">L2 Regularized • Stratified 80/20 Split</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-6 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
+      <div>Telco Customer Churn Intelligence • Exploratory Data Analysis &amp; Logistic Regression Portfolio Project</div>
+      <div>Dataset: IBM Telco Customer Churn (7,043 records) • Ready for GitHub Pages</div>
+    </div>
+  </footer>
+
+  <!-- Interactive Application Logic -->
+  <script>
+    // Smooth scroll / active navigation tab highlighting
+    function switchSection(sectionId) {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-teal-500/15', 'text-teal-300', 'border', 'border-teal-500/30');
+        btn.classList.add('text-slate-400');
+      });
+      const activeBtn = document.getElementById('nav-' + sectionId);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400');
+        activeBtn.classList.add('bg-teal-500/15', 'text-teal-300', 'border', 'border-teal-500/30');
+      }
+      const target = document.getElementById('section-' + sectionId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    // Preset Profiles for One-Click Demo
+    function applyPreset(type) {
+      if (type === 'high') {
+        document.getElementById('sim-contract').value = 'Month-to-month';
+        document.getElementById('sim-internet').value = 'Fiber optic';
+        document.getElementById('sim-tenure').value = 4;
+        document.getElementById('sim-monthly').value = 95;
+        document.getElementById('sim-payment').value = 'Electronic check';
+        document.getElementById('sim-streaming').value = 'Both';
+        document.getElementById('sim-security').checked = false;
+        document.getElementById('sim-tech').checked = false;
+        document.getElementById('sim-paperless').checked = true;
+        document.getElementById('sim-senior').checked = false;
+      } else {
+        document.getElementById('sim-contract').value = 'Two year';
+        document.getElementById('sim-internet').value = 'DSL';
+        document.getElementById('sim-tenure').value = 58;
+        document.getElementById('sim-monthly').value = 55;
+        document.getElementById('sim-payment').value = 'Credit card (automatic)';
+        document.getElementById('sim-streaming').value = 'None';
+        document.getElementById('sim-security').checked = true;
+        document.getElementById('sim-tech').checked = true;
+        document.getElementById('sim-paperless').checked = false;
+        document.getElementById('sim-senior').checked = false;
+      }
+      updateSimulator();
+    }
+
+    // Logistic Regression Log-Odds Risk Calculator (Calibrated to Model Odds Ratios)
+    function updateSimulator() {
+      const contract = document.getElementById('sim-contract').value;
+      const internet = document.getElementById('sim-internet').value;
+      const tenure = parseInt(document.getElementById('sim-tenure').value, 10);
+      const monthly = parseFloat(document.getElementById('sim-monthly').value);
+      const payment = document.getElementById('sim-payment').value;
+      const streaming = document.getElementById('sim-streaming').value;
+      const hasSecurity = document.getElementById('sim-security').checked;
+      const hasTech = document.getElementById('sim-tech').checked;
+      const isPaperless = document.getElementById('sim-paperless').checked;
+      const isSenior = document.getElementById('sim-senior').checked;
+
+      // Update slider readouts
+      document.getElementById('val-tenure').textContent = `${tenure} month${tenure === 1 ? '' : 's'}`;
+      document.getElementById('val-monthly').textContent = `$${monthly.toFixed(2)}`;
+
+      // Compute Engineered Features
+      const isEngaged = (contract === 'One year' || contract === 'Two year') ? 1 : 0;
+      let tenureYearLabel = '0-1 Year';
+      if (tenure > 60) tenureYearLabel = '5-6 Year';
+      else if (tenure > 48) tenureYearLabel = '4-5 Year';
+      else if (tenure > 36) tenureYearLabel = '3-4 Year';
+      else if (tenure > 24) tenureYearLabel = '2-3 Year';
+      else if (tenure > 12) tenureYearLabel = '1-2 Year';
+
+      let totalServices = 1; // PhoneService baseline
+      if (internet !== 'No') totalServices += 1;
+      if (hasSecurity) totalServices += 1;
+      if (hasTech) totalServices += 1;
+      if (streaming === 'One') totalServices += 1;
+      if (streaming === 'Both') totalServices += 2;
+
+      const totalCharges = tenure * monthly;
+      const avgCharges = totalCharges / (tenure + 1);
+
+      document.getElementById('fe-engaged').textContent = isEngaged ? '1 (Yes)' : '0 (No)';
+      document.getElementById('fe-tenure-yr').textContent = tenureYearLabel;
+      document.getElementById('fe-services').textContent = `${totalServices} Service${totalServices === 1 ? '' : 's'}`;
+      document.getElementById('fe-avg-charges').textContent = `$${avgCharges.toFixed(2)}`;
+
+      // Calibrated Log-Odds Calculation (matching learned Odds Ratios)
+      let logit = -0.35; // Intercept baseline (balanced class weight)
+
+      // Contract impact (Contract_Two year OR = 0.41, NEW_Engaged OR = 0.40)
+      if (contract === 'One year') logit -= 0.85;
+      if (contract === 'Two year') logit -= 1.65;
+
+      // Internet Service impact (Fiber optic OR = 3.37 -> ln(3.37) ≈ +1.21)
+      if (internet === 'Fiber optic') logit += 1.15;
+      if (internet === 'No') logit -= 0.75;
+
+      // Standardized Tenure impact (tenure OR = 0.39 -> ln(0.39) ≈ -0.94 per SD of ~24.5 mo)
+      const tenureZ = (tenure - 32.37) / 24.56;
+      logit += -0.92 * tenureZ;
+
+      // Monthly Charges impact
+      const monthlyZ = (monthly - 64.76) / 30.09;
+      logit += 0.28 * monthlyZ;
+
+      // Payment Method impact
+      if (payment === 'Electronic check') logit += 0.48;
+      if (payment === 'Bank transfer (automatic)' || payment === 'Credit card (automatic)') logit -= 0.18;
+
+      // Streaming add-ons (StreamingMovies/TV OR ~ 1.77 -> ln(1.77) ≈ +0.57)
+      if (streaming === 'One') logit += 0.28;
+      if (streaming === 'Both') logit += 0.52;
+
+      // Protection & Account Flags
+      if (hasSecurity) logit -= 0.34; // OnlineSecurity OR = 0.72
+      if (hasTech) logit -= 0.32;
+      if (isPaperless) logit += 0.24;
+      if (isSenior) logit += 0.22;
+
+      // Sigmoid Transformation
+      const prob = 1 / (1 + Math.exp(-logit));
+      const pct = Math.min(99.5, Math.max(0.5, prob * 100));
+
+      // Update Semicircular SVG Gauge (arc length = 345.57)
+      const maxDash = 345.57;
+      const offset = maxDash * (1 - pct / 100);
+      const gaugeArc = document.getElementById('gauge-arc');
+      const gaugeText = document.getElementById('gauge-percent');
+      const riskBadge = document.getElementById('risk-badge');
+
+      gaugeArc.style.strokeDashoffset = offset.toFixed(2);
+      gaugeText.textContent = `${pct.toFixed(1)}%`;
+
+      if (pct >= 59.0) {
+        gaugeArc.style.stroke = '#f43f5e';
+        riskBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40';
+        riskBadge.textContent = 'HIGH CHURN RISK (≥ 59%)';
+      } else if (pct >= 35.0) {
+        gaugeArc.style.stroke = '#fbbf24';
+        riskBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        riskBadge.textContent = 'MODERATE RISK (35%–58%)';
+      } else {
+        gaugeArc.style.stroke = '#14b8a6';
+        riskBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-teal-500/20 text-teal-300 border border-teal-500/40';
+        riskBadge.textContent = 'LOW CHURN RISK (< 35%)';
+      }
+
+      // Dynamic Retention Recommendations
+      const recs = [];
+      if (contract === 'Month-to-month') {
+        recs.push('• <strong>Contract Migration:</strong> Offer a 15% loyalty discount to transition from Month-to-month to a 1-Year or 2-Year contract (reduces churn odds by ~60%).');
+      }
+      if (internet === 'Fiber optic' && (!hasSecurity || !hasTech)) {
+        recs.push('• <strong>Fiber Protection Bundle:</strong> Fiber optic customers without Tech Support/Security have elevated churn; bundle 3 months of free Tech Support.');
+      }
+      if (payment === 'Electronic check') {
+        recs.push('• <strong>Auto-Pay Incentive:</strong> Provide a $5/mo bill credit for switching from Electronic Check to Automatic Credit Card or Bank Transfer.');
+      }
+      if (tenure < 12) {
+        recs.push('• <strong>First-Year Onboarding Check-in:</strong> Customer is in the critical 0–1 Year window; schedule proactive billing & service quality outreach.');
+      }
+      if (recs.length === 0) {
+        recs.push('• <strong>Account Healthy:</strong> Customer exhibits strong retention signals (long-term contract / bundled protection). Maintain standard VIP loyalty perks.');
+      }
+      document.getElementById('retention-list').innerHTML = recs.map(r => `<li>${r}</li>`).join('');
+    }
+
+    // Threshold Explorer Lookup Table (Interpolated from Test Set ROC Curve)
+    const thresholdCurve = [
+      { t: 0.20, acc: 55.4, prec: 36.8, rec: 96.5, f1: 0.533 },
+      { t: 0.30, acc: 62.8, prec: 41.2, rec: 92.2, f1: 0.569 },
+      { t: 0.40, acc: 68.9, prec: 45.8, rec: 86.4, f1: 0.599 },
+      { t: 0.50, acc: 74.0, prec: 50.6, rec: 78.9, f1: 0.617 },
+      { t: 0.59, acc: 77.6, prec: 56.2, rec: 71.4, f1: 0.629 },
+      { t: 0.65, acc: 79.4, prec: 60.5, rec: 63.1, f1: 0.618 },
+      { t: 0.70, acc: 80.5, prec: 64.8, rec: 55.6, f1: 0.598 },
+      { t: 0.80, acc: 79.8, prec: 72.1, rec: 38.2, f1: 0.500 }
+    ];
+
+    function updateThresholdExplorer() {
+      const tVal = parseFloat(document.getElementById('thresh-slider').value);
+      document.getElementById('thresh-display').textContent = tVal.toFixed(2);
+
+      // Linear interpolation between curve points
+      let lower = thresholdCurve[0];
+      let upper = thresholdCurve[thresholdCurve.length - 1];
+      for (let i = 0; i < thresholdCurve.length - 1; i++) {
+        if (tVal >= thresholdCurve[i].t && tVal <= thresholdCurve[i + 1].t) {
+          lower = thresholdCurve[i];
+          upper = thresholdCurve[i + 1];
+          break;
+        }
+      }
+      const ratio = upper.t === lower.t ? 0 : (tVal - lower.t) / (upper.t - lower.t);
+      const acc = lower.acc + ratio * (upper.acc - lower.acc);
+      const prec = lower.prec + ratio * (upper.prec - lower.prec);
+      const rec = lower.rec + ratio * (upper.rec - lower.rec);
+      const f1 = lower.f1 + ratio * (upper.f1 - lower.f1);
+
+      document.getElementById('m-acc').textContent = `${acc.toFixed(1)}%`;
+      document.getElementById('m-prec').textContent = `${prec.toFixed(1)}%`;
+      document.getElementById('m-rec').textContent = `${rec.toFixed(1)}%`;
+      document.getElementById('m-f1').textContent = f1.toFixed(3);
+    }
+
+    // Initialize Chart.js Visualizations on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateSimulator();
+      updateThresholdExplorer();
+
+      Chart.defaults.color = '#94a3b8';
+      Chart.defaults.borderColor = '#1e293b';
+      Chart.defaults.font.family = 'Inter, sans-serif';
+
+      // 1. Contract Type Chart
+      new Chart(document.getElementById('chartContract'), {
+        type: 'bar',
+        data: {
+          labels: ['Month-to-month', 'One year', 'Two year'],
+          datasets: [{
+            label: 'Churn Rate (%)',
+            data: [42.7, 11.3, 2.8],
+            backgroundColor: ['#f43f5e', '#38bdf8', '#14b8a6'],
+            borderRadius: 8,
+            barPercentage: 0.55
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 50, ticks: { callback: v => v + '%' } }
+          }
+        }
+      });
+
+      // 2. Odds Ratio Horizontal Bar Chart
+      new Chart(document.getElementById('chartOdds'), {
+        type: 'bar',
+        data: {
+          labels: [
+            'InternetService: Fiber optic',
+            'StreamingMovies: Yes',
+            'StreamingTV: Yes',
+            'OnlineSecurity: Yes',
+            'Contract: Two year',
+            'NEW_Engaged (1-2 Yr)',
+            'tenure (Continuous)'
+          ],
+          datasets: [{
+            label: 'Odds Ratio (exp(coef))',
+            data: [3.37, 1.79, 1.76, 0.72, 0.41, 0.40, 0.39],
+            backgroundColor: [
+              '#f43f5e', '#f43f5e', '#f43f5e',
+              '#14b8a6', '#14b8a6', '#14b8a6', '#14b8a6'
+            ],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { beginAtZero: true, max: 3.6 }
+          }
+        }
+      });
+
+      // 3. Internet Service Chart
+      new Chart(document.getElementById('chartInternet'), {
+        type: 'bar',
+        data: {
+          labels: ['Fiber optic', 'DSL Broadband', 'No Internet'],
+          datasets: [{
+            label: 'Churn Rate (%)',
+            data: [41.9, 19.0, 7.4],
+            backgroundColor: ['#fb923c', '#38bdf8', '#64748b'],
+            borderRadius: 8,
+            barPercentage: 0.55
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 50, ticks: { callback: v => v + '%' } }
+          }
+        }
+      });
+
+      // 4. Payment Method Chart
+      new Chart(document.getElementById('chartPayment'), {
+        type: 'bar',
+        data: {
+          labels: ['Electronic check', 'Mailed check', 'Bank transfer (auto)', 'Credit card (auto)'],
+          datasets: [{
+            label: 'Churn Rate (%)',
+            data: [45.3, 19.1, 16.7, 15.2],
+            backgroundColor: ['#f43f5e', '#fbbf24', '#14b8a6', '#10b981'],
+            borderRadius: 8,
+            barPercentage: 0.6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 50, ticks: { callback: v => v + '%' } }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
